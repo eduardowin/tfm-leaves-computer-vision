@@ -1,2 +1,8 @@
 developRTfm/
- 
+ fly.toml
+# flyctl launch added from .gitignore
+**\developTfm
+**\.env.bat 
+# flyctl launch added from flaskHeroku\.gitignore
+# created by virtualenv automatically
+developTfm\**\*

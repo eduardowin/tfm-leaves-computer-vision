@@ -1,6 +1,5 @@
 
 from io import BytesIO
-from typing import Awaitable
 from flask import Flask, Response, jsonify, current_app
 from flask import make_response, send_file
 import time
@@ -17,7 +16,6 @@ from threading import Thread
 from functools import wraps
 import os
 import asyncio
-import httpx
 from flask_cors import CORS
 from flask import Flask, render_template, request,jsonify
 
@@ -98,4 +96,6 @@ def enviar(telefonoRecibe,respuesta):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    print('port')
+    print(port)
+    app.run(host='0.0.0.0', port=port)
