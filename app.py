@@ -29,10 +29,12 @@ cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 from heyoo import WhatsApp
 
-SECRET_KEY = 'aKLMSLK3I4JNESOLUTIONSKJN545N4J5N4J54H4G44H5JBSSDBNF3453S2223KJNF'
+urlBase = os.environ.get('urlBase')
+bearerToken = os.environ.get('bearerToken')
 
 @app.route('/')
 def index():
+    print('index',flush=True)
     return '<h1> Hola desde flask </h1>'
 
 
@@ -47,6 +49,7 @@ def model_evaluate():
 
 @app.route("/webhook/", methods=["POST", "GET"])
 def webhook_whatsapp():
+    print('webhook_whatsapp',flush=True)
     #SI HAY DATOS RECIBIDOS VIA GET
     if request.method == "GET":
         #SI EL TOKEN ES IGUAL AL QUE RECIBIMOS
@@ -58,36 +61,50 @@ def webhook_whatsapp():
           return "Error de autentificacion."
     #RECIBIMOS TODOS LOS DATOS ENVIADO VIA JSON
     data=request.get_json()
-    #EXTRAEMOS EL NUMERO DE TELEFONO Y EL MANSAJE
-    telefonoCliente=data['entry'][0]['changes'][0]['value']['messages'][0]['from']
-    #EXTRAEMOS EL TELEFONO DEL CLIENTE
-    mensaje=data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body']
-    #EXTRAEMOS EL ID DE WHATSAPP DEL ARRAY
-    idWA=data['entry'][0]['changes'][0]['value']['messages'][0]['id']
-    #EXTRAEMOS EL TIEMPO DE WHATSAPP DEL ARRAY
-    timestamp=data['entry'][0]['changes'][0]['value']['messages'][0]['timestamp']
-    #ESCRIBIMOS EL NUMERO DE TELEFONO Y EL MENSAJE EN EL ARCHIVO TEXTO
-    #SI HAY UN MENSAJE
-    respuesta=""
 
-    respuesta=respuesta.replace("\\n","\\\n")
-    respuesta=respuesta.replace("\\","")
+    print('data',flush=True)
+    print(data,flush=True)
 
-    # enviar(telefonoCliente,respuesta)
-    #RETORNAMOS EL STATUS EN UN JSON
-    print('telefonoCliente')
-    print(telefonoCliente)
-    print('timestamp')
-    print(timestamp)
-    print('mensaje')
-    print(mensaje)
+    primer_mensaje = data['entry'][0]['changes'][0]['value']['messages'][0]
+    telefonoCliente = primer_mensaje['from']
+
+    if primer_mensaje['type'] == "image":
+        image_id = primer_mensaje['image']['id']
+
+        urlParameter = "/{0}".format(image_id)
+        headers = {
+            'content-type': 'application/json',
+            'Authorization':  'Bearer '+ bearerToken,
+        }
+
+        wb = str(urlBase) + str(urlParameter)
+        response = requests.get(wb, headers=headers)
+
+        print('response',flush=True)
+        print(response,flush=True)
+
+        if response['status_code'] == 200:
+            dataUrl = response.json()
+            responseUrl = requests.get(dataUrl['url'], headers=headers)
+
+            if responseUrl['status_code'] == 200:
+                print('responseUrl',flush=True)
+                print(responseUrl,flush=True)
+            else:
+                print('Hubo un error 1',flush=True)
+                enviar(telefonoCliente, "Hubo un error al obtener la imagen, por favor volve a intentarlo")
+        else:
+            print('Hubo un error 2',flush=True)
+            enviar(telefonoCliente, "Hubo un error al obtener la imagen, por favor volve a intentarlo")
+    else:
+        enviar(telefonoCliente, "Este sistema solo acepta imagenes de plantas de mango, por favor enviamos tu imagen a evaluar")
     return jsonify({"status": "success"}, 200)
 
 def enviar(telefonoRecibe,respuesta):
   #TOKEN DE ACCESO DE FACEBOOK
-  token = 'EAALDlRZBLBD4BAGIFXLcPuwwgkXMZAnCOAuvPTXRBPbi4tKavrq9PmCFuWfMvmoBHkjeKghBQhs0AExdK3Ru5NCXfWsDaIvUuVAZBDLNtKmom0pwSkA9LhUJMYrLVYTLhlWPPjg9iRuOBSpKKr7oExDHwC385UxJZCwFH2qxadMfqKQDAMMngReZBNvyJ3rLFmiOVB6xZBrwZDZD'
+  token = bearerToken
   #IDENTIFICADOR DE NÚMERO DE TELÉFONO
-  idNumeroTeléfono = '116907067953774'
+  idNumeroTeléfono = '108937662223602'
   #INICIALIZAMOS ENVIO DE MENSAJES
   mensajeWa = WhatsApp(token,idNumeroTeléfono)
   telefonoRecibe = telefonoRecibe.replace("521","52")

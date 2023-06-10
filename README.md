@@ -19,4 +19,5 @@ python app.py
 flyctl auth login
 flyctl launch
 flyctl deploy
+flyctl deploy --local-only
 https://fly.io/docs/languages-and-frameworks/node/
