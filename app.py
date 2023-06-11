@@ -59,16 +59,11 @@ def resize(x):
 @app.route("/webhook/", methods=["POST", "GET"])
 def webhook_whatsapp():
     print('webhook_whatsapp',flush=True)
-    #SI HAY DATOS RECIBIDOS VIA GET
     if request.method == "GET":
-        #SI EL TOKEN ES IGUAL AL QUE RECIBIMOS
         if request.args.get('hub.verify_token') == "LeafBotModel":
-            #ESCRIBIMOS EN EL NAVEGADOR EL VALOR DEL RETO RECIBIDO DESDE FACEBOOK
             return request.args.get('hub.challenge')
         else:
-            #SI NO SON IGUALES RETORNAMOS UN MENSAJE DE ERROR
           return "Error de autentificacion."
-    #RECIBIMOS TODOS LOS DATOS ENVIADO VIA JSON
     data=request.get_json()
 
     print('data',flush=True)
@@ -106,7 +101,11 @@ def webhook_whatsapp():
                 image = cv2.imdecode(image, cv2.IMREAD_COLOR)
                 print('image',flush=True)
                 print(image,flush=True)
-                class_prediction=model.predict(image) 
+
+                newImage = resize(image) 
+                newImage = newImage.reshape(1, 512, 512, 3)
+
+                class_prediction=model.predict(newImage) 
                 classes_x=np.argmax(class_prediction,axis=1)
                 print('classes_x',flush=True)
                 print(classes_x,flush=True)
