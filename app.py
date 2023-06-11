@@ -28,6 +28,8 @@ app = Flask(__name__, static_folder='static')
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 from heyoo import WhatsApp
+import cv2
+import numpy as np
 
 urlBase = os.environ.get('urlBase')
 bearerToken = os.environ.get('bearerToken')
@@ -77,19 +79,32 @@ def webhook_whatsapp():
             'Authorization':  'Bearer '+ bearerToken,
         }
 
+ 
+
         wb = str(urlBase) + str(urlParameter)
+
+        print('wb',flush=True)
+        print(wb,flush=True)
         response = requests.get(wb, headers=headers)
 
-        print('response',flush=True)
-        print(response,flush=True)
-
-        if response['status_code'] == 200:
+        if response.status_code == 200:
             dataUrl = response.json()
-            responseUrl = requests.get(dataUrl['url'], headers=headers)
+            resp = requests.get(dataUrl['url'], headers=headers, stream=True).raw
 
-            if responseUrl['status_code'] == 200:
-                print('responseUrl',flush=True)
-                print(responseUrl,flush=True)
+            print('resp',flush=True)
+            print(resp,flush=True)
+
+            if resp is not None:
+                image = np.asarray(bytearray(resp.read()), dtype="uint8")
+                image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+                print('image',flush=True)
+                print(image,flush=True)
+                # cv2.imshow('image',image)
+                # cv2.waitKey(0)
+                # with open('image_name.jpg', 'wb') as handler:
+                #     handler.write(resp.content)
+                enviar(telefonoCliente, "La clasificación es:\nHoja Enferma")
+
             else:
                 print('Hubo un error 1',flush=True)
                 enviar(telefonoCliente, "Hubo un error al obtener la imagen, por favor volve a intentarlo")
