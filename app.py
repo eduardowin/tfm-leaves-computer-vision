@@ -30,9 +30,13 @@ cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 from heyoo import WhatsApp
 import cv2
 import numpy as np
+from tensorflow.keras.models import load_model
 
 urlBase = os.environ.get('urlBase')
 bearerToken = os.environ.get('bearerToken')
+model = load_model('leaf_model.h5')
+widthImage = 512
+heightImage = 512
 
 @app.route('/')
 def index():
@@ -48,6 +52,9 @@ def model_evaluate():
     # predicted_price = expm1(prediction.flatten()[0])
     # return jsonify({"price": str(predicted_price)})
     return jsonify({"price":"2324"})
+
+def resize(x):
+  return cv2.resize(x, dsize=(widthImage, heightImage), interpolation = cv2.INTER_AREA)
 
 @app.route("/webhook/", methods=["POST", "GET"])
 def webhook_whatsapp():
@@ -99,6 +106,10 @@ def webhook_whatsapp():
                 image = cv2.imdecode(image, cv2.IMREAD_COLOR)
                 print('image',flush=True)
                 print(image,flush=True)
+                class_prediction=model.predict(image) 
+                classes_x=np.argmax(class_prediction,axis=1)
+                print('classes_x',flush=True)
+                print(classes_x,flush=True)
                 # cv2.imshow('image',image)
                 # cv2.waitKey(0)
                 # with open('image_name.jpg', 'wb') as handler:
