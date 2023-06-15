@@ -100,12 +100,15 @@ def webhook_whatsapp():
                 image = np.asarray(bytearray(resp.read()), dtype="uint8")
                 image = cv2.imdecode(image, cv2.IMREAD_COLOR)
                 print('image',flush=True)
-                print(image,flush=True)
+                # print(image,flush=True)
 
                 newImage = resize(image) 
                 newImage = newImage.reshape(1, 512, 512, 3)
 
-                class_prediction=model.predict(newImage) 
+                class_prediction=model.predict(newImage)
+                print('prediction.shape')
+                print(class_prediction.shape)
+                
                 classes_x=np.argmax(class_prediction,axis=1)
                 print('classes_x',flush=True)
                 print(classes_x,flush=True)
