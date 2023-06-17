@@ -58,7 +58,7 @@ def resize(x):
 
 @app.route("/webhook/", methods=["POST", "GET"])
 def webhook_whatsapp():
-    print('webhook_whatsapp',flush=True)
+    # print('webhook_whatsapp',flush=True)
     if request.method == "GET":
         if request.args.get('hub.verify_token') == "LeafBotModel":
             return request.args.get('hub.challenge')
@@ -66,66 +66,72 @@ def webhook_whatsapp():
           return "Error de autentificacion."
     data=request.get_json()
 
-    print('data',flush=True)
-    print(data,flush=True)
+    # print('data',flush=True)
+    # print(data,flush=True)
+    
+    if 'messages' in data['entry'][0]['changes'][0]['value']:
 
-    primer_mensaje = data['entry'][0]['changes'][0]['value']['messages'][0]
-    telefonoCliente = primer_mensaje['from']
+        primer_mensaje = data['entry'][0]['changes'][0]['value']['messages'][0]
+        telefonoCliente = primer_mensaje['from']
+        print(data,flush=True)
+        
+        if primer_mensaje['type'] == "image":
+            image_id = primer_mensaje['image']['id']
 
-    if primer_mensaje['type'] == "image":
-        image_id = primer_mensaje['image']['id']
+            urlParameter = "/{0}".format(image_id)
+            headers = {
+                'content-type': 'application/json',
+                'Authorization':  'Bearer '+ bearerToken,
+            }
+            wb = str(urlBase) + str(urlParameter)
 
-        urlParameter = "/{0}".format(image_id)
-        headers = {
-            'content-type': 'application/json',
-            'Authorization':  'Bearer '+ bearerToken,
-        }
+            print('wb',flush=True)
+            # print(wb,flush=True)
+            response = requests.get(wb, headers=headers)
 
- 
+            if response.status_code == 200:
+                dataUrl = response.json()
+                resp = requests.get(dataUrl['url'], headers=headers, stream=True).raw
 
-        wb = str(urlBase) + str(urlParameter)
+                print('resp',flush=True)
+                # print(resp,flush=True)
 
-        print('wb',flush=True)
-        print(wb,flush=True)
-        response = requests.get(wb, headers=headers)
+                if resp is not None:
+                    image = np.asarray(bytearray(resp.read()), dtype="uint8")
+                    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+                    print('image',flush=True)
+                    # print(image,flush=True)
 
-        if response.status_code == 200:
-            dataUrl = response.json()
-            resp = requests.get(dataUrl['url'], headers=headers, stream=True).raw
+                    newImage = resize(image) 
+                    newImage = newImage.reshape(1, 512, 512, 3)
+                    newImage = newImage/255
 
-            print('resp',flush=True)
-            print(resp,flush=True)
+                    
+                    predicted_classes = np.argmax(model.predict(newImage), axis=-1)
+                    print('prediction.shape')
+                    print(predicted_classes)    
+                    print(predicted_classes.shape)    
+                    print(type(predicted_classes))    
+                    # classes_x = np.argmax(predicted_classes,axis=1)
+                    
+                    label_to_text =  {0:'Enferma', 1:'Sana'}
+                    text_prediction = label_to_text[predicted_classes[0]]
+                    print('text_prediction',flush=True)
+                    print(text_prediction,flush=True)
+                    # cv2.imshow('image',image)
+                    # cv2.waitKey(0)
+                    # with open('image_name.jpg', 'wb') as handler:
+                    #     handler.write(resp.content)
+                    enviar(telefonoCliente, "La clasificación es:\n{}".format(text_prediction))
 
-            if resp is not None:
-                image = np.asarray(bytearray(resp.read()), dtype="uint8")
-                image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-                print('image',flush=True)
-                # print(image,flush=True)
-
-                newImage = resize(image) 
-                newImage = newImage.reshape(1, 512, 512, 3)
-
-                class_prediction=model.predict(newImage)
-                print('prediction.shape')
-                print(class_prediction.shape)
-                
-                classes_x=np.argmax(class_prediction,axis=1)
-                print('classes_x',flush=True)
-                print(classes_x,flush=True)
-                # cv2.imshow('image',image)
-                # cv2.waitKey(0)
-                # with open('image_name.jpg', 'wb') as handler:
-                #     handler.write(resp.content)
-                enviar(telefonoCliente, "La clasificación es:\nHoja Enferma")
-
+                else:
+                    print('Hubo un error 1',flush=True)
+                    enviar(telefonoCliente, "Hubo un error al obtener la imagen, por favor volve a intentarlo")
             else:
-                print('Hubo un error 1',flush=True)
+                print('Hubo un error 2',flush=True)
                 enviar(telefonoCliente, "Hubo un error al obtener la imagen, por favor volve a intentarlo")
         else:
-            print('Hubo un error 2',flush=True)
-            enviar(telefonoCliente, "Hubo un error al obtener la imagen, por favor volve a intentarlo")
-    else:
-        enviar(telefonoCliente, "Este sistema solo acepta imagenes de plantas de mango, por favor enviamos tu imagen a evaluar")
+            enviar(telefonoCliente, "El sistema solo acepta imagenes de plantas de mango, por favor enviar una imagen a evaluar")
     return jsonify({"status": "success"}, 200)
 
 def enviar(telefonoRecibe,respuesta):
