@@ -34,9 +34,9 @@ from tensorflow.keras.models import load_model
 
 urlBase = os.environ.get('urlBase')
 bearerToken = os.environ.get('bearerToken')
-model = load_model('leaf_model.h5')
-widthImage = 512
-heightImage = 512
+model = load_model('leaf_model_acc_0_97.h5')
+widthImage = 224
+heightImage = 224
 
 @app.route('/')
 def index():
@@ -91,30 +91,34 @@ def webhook_whatsapp():
 
             if response.status_code == 200:
                 dataUrl = response.json()
+                print(dataUrl['url'])
+                print(dataUrl['url'])
                 resp = requests.get(dataUrl['url'], headers=headers, stream=True).raw
 
                 print('resp',flush=True)
-                # print(resp,flush=True)
+                print(resp,flush=True)
 
                 if resp is not None:
                     image = np.asarray(bytearray(resp.read()), dtype="uint8")
                     image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                     print('image',flush=True)
                     # print(image,flush=True)
+                    print("image.shape")
+                    print(image.shape)
 
-                    newImage = resize(image) 
-                    newImage = newImage.reshape(1, 512, 512, 3)
-                    newImage = newImage/255
-
+                    newImage = resize(image)
+                    print("newImage.shape")
+                    print(newImage.shape)
+                    newImage = newImage.reshape(1, 224, 224, 3)
                     
                     predicted_classes = np.argmax(model.predict(newImage), axis=-1)
                     print('prediction.shape')
                     print(predicted_classes)    
                     print(predicted_classes.shape)    
                     print(type(predicted_classes))    
-                    # classes_x = np.argmax(predicted_classes,axis=1)
                     
-                    label_to_text =  {0:'Enferma', 1:'Sana'}
+                    label_to_text =  {1:'Enferma', 0:'Sana'}
                     text_prediction = label_to_text[predicted_classes[0]]
                     print('text_prediction',flush=True)
                     print(text_prediction,flush=True)
