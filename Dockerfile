@@ -1,12 +1,13 @@
-FROM python:3.10-slim-bullseye
+FROM python:3.10.13-slim-bullseye
 
 WORKDIR /
 
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
-RUN pip3 install httpx==0.23.3
-RUN pip3 install heyoo==0.0.9
-RUN pip install -U flask-cors
+RUN pip3 install httpx==0.23.3 && pip3 install heyoo==0.0.9 && pip install -U flask-cors
+# RUN pip3 install heyoo==0.0.9
+# RUN pip install -U flask-cors
+RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 
 COPY . .
 
